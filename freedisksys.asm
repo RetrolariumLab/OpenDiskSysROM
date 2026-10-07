@@ -316,26 +316,40 @@ API_ENTRYPOINT $e778
 XferDone:
 	RTS
 
-; Waits for the first byte to be transferred between the drive and RAM adapter.
-; Does not know or care whether it's a read or write. An interrupt is involved,
-; but the stack is manipulated in the ISR such that control returns to the
-; caller of this function as if it were a simple subroutine.
+; Starts the transfer of a block and exchanges its first byte: sets the start
+; and byte IRQ bits of $4025, then does what XferByte does. Does not know or
+; care whether it's a read or write.
 ; Parameters: A = byte to write to disk (if this is a write)
-; Affects: X, $101, $FA
+; Affects: X, $FA
 ; Returns: A = byte read from disk (if this is a read)
 API_ENTRYPOINT $e794
 Xfer1stByte:
-	RTS
+	TAX
+	LDA ZP_FDSCTRL
+	ORA #FDSCTRL_START | FDSCTRL_IRQ
+	STA ZP_FDSCTRL
+	STA FDSCTRL
+	TXA
+	JMP XferByte
 
-; Waits for a byte to be transferred between the drive and the RAM adapter.
-; Does not know or care whether it's a read or write. An interrupt is involved,
-; but the stack is manipulated in the ISR such that control returns to the
-; caller of this function as if it were a simple subroutine.
+; Waits for a byte to be transferred between the drive and the RAM adapter,
+; then hands it the byte to write and takes the byte read. Does not know or
+; care whether it's a read or write. This BIOS waits by polling the byte
+; transfer flag in $4030 rather than in an IRQ handler, so it works with
+; interrupts disabled; the byte IRQ bit of $4025 must be set, as
+; Xfer1stByte sets it, since the flag only follows it.
 ; Parameters: A = byte to write to disk (if this is a write)
 ; Affects: X
 ; Returns: A = byte read from disk (if this is a read)
 API_ENTRYPOINT $e7a3
 XferByte:
+	TAX
+@wait:
+	LDA DISKSTATUS
+	AND #%00000010		; bit 1: byte transfer flag
+	BEQ @wait
+	STX WRITEDATA
+	LDA READDATA
 	RTS
 
 ; VRAM Buffers
@@ -491,6 +505,7 @@ INCLUDE startmotor.asm
 INCLUDE diskcontrol.asm
 INCLUDE diskentry.asm
 INCLUDE diskexit.asm
+INCLUDE diskbytes.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
