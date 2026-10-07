@@ -252,12 +252,16 @@ SetFileCount:
 	LDA #OK
 	JMP DiskExit
 
-; Fills provided DiskInfo structure with data read off the current disk.
+; Fills provided DiskInfo structure with data read off the current disk. The
+; disk size at its end is, as documented, the sum of the file sizes plus 261
+; for each file.
 ; Parameters: Pointer to Disk Info
 ; Returns: A = error #
+; The structure: the 10-byte disk ID, the file count, for each file its ID and
+; 8-byte name, then the disk size (high byte first).
 API_ENTRYPOINT $e32a
 GetDiskInfo:
-	RTS
+	JMP GetDiskInfoImpl
 
 ; Adds Y to the 16-bit pointer at $0A-$0B.
 ; Parameters: Y = amount to add
@@ -887,6 +891,7 @@ INCLUDE diskbytes.asm
 INCLUDE checkdiskheader.asm
 INCLUDE readfileheader.asm
 INCLUDE writefile.asm
+INCLUDE getdiskinfo.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
