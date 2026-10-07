@@ -14,7 +14,7 @@
 ; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ; zero-page registers
-ZP_PPUCTRL		EQU $FF; value last written to $2000   $80 on reset.
+ZP_PPUCTRL		EQU $FF; value last written to $2000   $10 on reset.
 ZP_PPUMASK		EQU $FE; value last written to $2001   $06 on reset
 ZP_PPUSCROLL1	EQU $FD; value last written to $2005/1 $00 on reset.
 ZP_PPUSCROLL2	EQU $FC; value last written to $2005/2 $00 on reset.
