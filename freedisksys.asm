@@ -251,9 +251,34 @@ API_ENTRYPOINT $e5b5
 SaveData:
 	RTS
 
+; Waits until the drive, spun up by StartMotor, has its head at the start of
+; the disk ($4032 bit 1 clear). The battery is measured first, while the motor
+; runs, which is the only time $4033 bit 7 tells; bit 7 of the expansion port
+; output ($4026) is raised for that, since it shares the line.
+; Fails with POWER_SUPPLY_FAILURE on a low battery and DISK_NOT_SET when the
+; disk is taken out while waiting.
+; Affects: A, $F9
 API_ENTRYPOINT $e64d
 WaitForDriveReady:
+	LDA ZP_EXTCONN
+	ORA #%10000000
+	STA ZP_EXTCONN
+	STA EXTCONNWR
+	LDA EXTCONNRD
+	BPL @battery		; bit 7: 1 = the battery is good
+@wait:
+	LDA DRIVESTATUS
+	LSR A				; bit 0: no disk
+	BCS @notSet
+	LSR A				; bit 1: the head is not at the start yet
+	BCS @wait
 	RTS
+@battery:
+	LDA #POWER_SUPPLY_FAILURE
+	JMP DiskExit
+@notSet:
+	LDA #DISK_NOT_SET
+	JMP DiskExit
 
 ; Stops the drive the way the BIOS leaves it after reset: motor off, transfer
 ; reset held, read mode, no block transfer and no byte IRQ. Reading $4030 then
