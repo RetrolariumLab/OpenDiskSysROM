@@ -38,3 +38,29 @@ ReadByte:
 @end:
 	LDA #EOF_READ
 	JMP DiskExit
+
+; Writes the next byte of the block being written: waits until the RAM adapter
+; has taken the previous one, then hands it A. The end of the disk ($4030 bit
+; 6, or $4032 bit 1 once the drive has stopped) ends the disk call with
+; EOF_WRITE.
+; Parameters: A = byte to write
+; Affects: nothing else
+WriteByte:
+	PHA
+@wait:
+	LDA DISKSTATUS
+	AND #%01000010		; bit 1: ready for a byte, bit 6: end of the disk
+	BNE @status
+	LDA DRIVESTATUS
+	AND #%00000010		; bit 1: the drive stopped
+	BEQ @wait
+	BNE @end
+@status:
+	AND #%00000010
+	BEQ @end
+	PLA
+	STA WRITEDATA
+	RTS
+@end:
+	LDA #EOF_WRITE
+	JMP DiskExit

@@ -86,6 +86,7 @@ DISK_LOADED		EQU $0E ; files loaded so far (returned in Y)
 DISK_FILE_TYPE	EQU $0F ; 0 = program, 1 = character, 2 = nametable
 
 FILE_LIST_LENGTH	EQU 20 ; a file list holds up to 20 IDs
+GAP_LENGTH			EQU 122 ; bytes of gap written before a block (976 bits, as on disks)
 
 ; Error codes:
 OK EQU $00 ; no error
@@ -460,9 +461,31 @@ CheckBlockType:
 	ADC #BLOCK_TYPE_1_EXPECTED - 1
 	JMP DiskExit
 
+; Starts writing a block over whatever follows the last block read or written:
+; a gap of zeros, the start mark, then the block type in A. The mark goes to
+; $4024 while the drive still reads, so the RAM adapter puts it out when the
+; start bit is set, and emulators that store every byte written to $4024 in a
+; disk image without gaps or marks (MAME) store only the block itself.
+; Parameters: A = block type
+; Affects: A, X, $FA
 API_ENTRYPOINT $e6b0
 WriteBlockType:
-	RTS
+	PHA
+	LDA #$80			; the start mark, latched for later
+	STA WRITEDATA
+	LDA #FDSCTRL_IRQ | FDSCTRL_ONE | FDSCTRL_MOTOR
+	JSR SetDiskControl	; write mode, no block: the adapter writes zeros
+	LDX #GAP_LENGTH
+@gap:
+	LDA DISKSTATUS
+	AND #%00000010
+	BEQ @gap
+	DEX
+	BNE @gap
+	LDA #FDSCTRL_IRQ | FDSCTRL_START | FDSCTRL_ONE | FDSCTRL_MOTOR
+	JSR SetDiskControl	; the mark goes out next
+	PLA
+	JMP WriteByte
 
 ; Starts transferring a block in the mode the drive is in: sets the start and
 ; byte IRQ bits of $4025, so the RAM adapter waits for the start mark (reading)
