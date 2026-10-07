@@ -186,17 +186,47 @@ WriteFile:
 ; to A.
 ; Parameters: Pointer to Disk ID, A = # to set file count to
 ; Returns: A = error #
+; Fails with FILE_COUNT_EXCEEDED when A is above the count (no file can appear
+; that way).
 API_ENTRYPOINT $e2b7
 CheckFileCount:
-	RTS
+	LDX #$80
+	BNE ChangeFileCount
 
 ; Reads in disk's file count, decrements it by A, then writes the new value
 ; back.
 ; Parameters: Pointer to Disk ID, A = number to reduce current file count by
 ; Returns: A = error #
+; Fails with FILE_COUNT_EXCEEDED when A is above the count.
 API_ENTRYPOINT $e2bb
 AdjustFileCount:
-	RTS
+	LDX #$00
+ChangeFileCount:
+	STX DISK_FILE_TYPE	; $80: A is the new count, 0: A is subtracted
+	JSR GetHardCodedPointersWriteProtected	; one pointer: A goes to $02
+	JSR StartMotor
+	JSR WaitForDriveReady
+	JSR CheckDiskHeader
+	JSR GetNumFiles
+	LDA DISK_FILE_COUNT
+	SEC
+	SBC DISK_PTR2
+	BCC @exceeded
+	BIT DISK_FILE_TYPE
+	BPL @write
+	LDA DISK_PTR2
+@write:
+	PHA					; the new count, while the drive goes back to block 2
+	JSR StartMotor
+	JSR WaitForDriveReady
+	JSR CheckDiskHeader
+	PLA
+	JSR SetNumFiles
+	LDA #OK
+	JMP DiskExit
+@exceeded:
+	LDA #FILE_COUNT_EXCEEDED
+	JMP DiskExit
 
 ; Set the file count to A + 1
 ; Parameters: Pointer to Disk ID, A = file count minus one = # of the last file
