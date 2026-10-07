@@ -271,8 +271,20 @@ FileMatchTest:
 
 ; Skips over specified number of files.
 ; Parameters: Number of files to skip in $06
+; Each file's header and data blocks are read through and nothing is loaded;
+; $06 counts down to 0.
+; Affects: A, Y, $06, $08-$0F, $FA
 API_ENTRYPOINT $e4da
 SkipFiles:
+	LDA DISK_FILE_COUNT
+	BEQ @done
+	JSR ReadFileHeader
+	LDA #$FF
+	STA DISK_MATCH
+	JSR ReadData
+	DEC DISK_FILE_COUNT
+	JMP SkipFiles
+@done:
 	RTS
 
 ; Reads one file: its header block, then its data block, loading the data
