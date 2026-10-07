@@ -254,9 +254,18 @@ GetNumFiles:
 
 ; Writes new number of files to disk header.
 ; Parameters: A = number of files
+; The drive must be right after the disk info block (after CheckDiskHeader):
+; this rewrites the file amount block that follows it.
+; Affects: A, X, $FA
 API_ENTRYPOINT $e492
 SetNumFiles:
-	RTS
+	PHA
+	LDA #2
+	JSR WriteBlockType
+	PLA
+	JSR WriteByte
+	CLC
+	JMP EndOfBlkWrite
 
 ; Uses a byte string pointed at by Ptr($02) to tell the disk system which files
 ; to load. The file ID's number is searched for in the string. If an exact
