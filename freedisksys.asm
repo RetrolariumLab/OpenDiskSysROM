@@ -59,6 +59,32 @@ READDATA	EQU $4031
 DRIVESTATUS	EQU $4032
 EXTCONNRD	EQU $4033
 
+; $4025 (FDSCTRL) bits. Bit 3 selects the mirroring and belongs to the game:
+; SetDiskControl keeps it as it is.
+FDSCTRL_MOTOR	EQU %00000001 ; turn the drive motor on
+FDSCTRL_RESET	EQU %00000010 ; reset the transfer timing: the head goes back to the start
+FDSCTRL_READ	EQU %00000100 ; 1 = read the disk, 0 = write it
+FDSCTRL_MIRROR	EQU %00001000 ; 1 = horizontal mirroring, 0 = vertical
+FDSCTRL_CRC		EQU %00010000 ; set while the two CRC bytes of a block pass
+FDSCTRL_ONE		EQU %00100000 ; always set
+FDSCTRL_START	EQU %01000000 ; start transferring a block
+FDSCTRL_IRQ		EQU %10000000 ; raise the byte transfer flag (and the IRQ) for each byte
+
+; Zero page the disk routines work in ($00-$0F belong to the BIOS during a
+; disk call, as on the original).
+DISK_PTR1		EQU $00 ; first pointer parameter (disk ID, disk info)
+DISK_PTR2		EQU $02 ; second pointer parameter (file list, file header), or A
+DISK_SAVED_SP	EQU $04 ; stack pointer to return to the caller with, also on errors
+DISK_SAVED_P	EQU $05 ; the caller's processor flags (its interrupt disable flag)
+DISK_FILE_COUNT	EQU $06 ; files on the disk, or files to skip
+DISK_BOOT_CODE	EQU $07 ; boot file code from the disk info block
+DISK_TEMP		EQU $08 ; expected block type, then the file ID being read
+DISK_MATCH		EQU $09 ; 0 = the file is to be loaded, $FF = skip it
+DISK_DEST		EQU $0A ; where the file goes (CPU or PPU address)
+DISK_SIZE		EQU $0C ; bytes of file data left
+DISK_LOADED		EQU $0E ; files loaded so far (returned in Y)
+DISK_FILE_TYPE	EQU $0F ; 0 = program, 1 = character, 2 = nametable
+
 ; Error codes:
 OK EQU $00 ; no error
 DISK_NOT_SET EQU $01 ; disk set, ($4032.0) disk not set
@@ -425,11 +451,11 @@ API_ENTRYPOINT $ec22
 unk_EC22:
 	RTS
 
-API_ENTRYPOINT $ee17
-StartMotor:
-	RTS
+INCLUDE startmotor.asm
 
 ; private functions
+
+INCLUDE diskcontrol.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
