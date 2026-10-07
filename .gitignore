@@ -1,3 +1,5 @@
 .vscode
 *.bin
 *.lst
+build/
+__pycache__/
