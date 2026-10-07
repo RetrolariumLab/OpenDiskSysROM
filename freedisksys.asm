@@ -464,8 +464,16 @@ API_ENTRYPOINT $e6b0
 WriteBlockType:
 	RTS
 
+; Starts transferring a block in the mode the drive is in: sets the start and
+; byte IRQ bits of $4025, so the RAM adapter waits for the start mark (reading)
+; or writes the byte in $4024 next (writing).
+; Affects: A, $FA
 API_ENTRYPOINT $e6e3
 StartXfer:
+	LDA ZP_FDSCTRL
+	ORA #FDSCTRL_START | FDSCTRL_IRQ
+	STA ZP_FDSCTRL
+	STA FDSCTRL
 	RTS
 
 ; Finishes reading a block: reads the two CRC bytes that follow its data with
