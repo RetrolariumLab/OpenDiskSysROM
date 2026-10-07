@@ -275,9 +275,14 @@ API_ENTRYPOINT $e4da
 SkipFiles:
 	RTS
 
+; Reads one file: its header block, then its data block, loading the data
+; when the file list at ($02) asks for the file (see FileMatchTest).
+; Affects: A, Y, $08-$0F, $FA
 API_ENTRYPOINT $e4f9
 LoadData:
-	RTS
+	JSR ReadFileHeader
+	JSR FileMatchTest
+	JMP ReadData
 
 ; Reads a file data block. Program files go to CPU memory at $0A-$0B,
 ; character and nametable files to PPU memory there (written through $2007
@@ -644,6 +649,7 @@ INCLUDE diskentry.asm
 INCLUDE diskexit.asm
 INCLUDE diskbytes.asm
 INCLUDE checkdiskheader.asm
+INCLUDE readfileheader.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
