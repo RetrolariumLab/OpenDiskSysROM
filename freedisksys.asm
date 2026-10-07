@@ -292,9 +292,26 @@ StopMotor:
 	LDA DISKSTATUS
 	RTS
 
+; Starts reading the next block and checks its first byte, the block type:
+; 1 disk info, 2 file amount, 3 file header, 4 file data.
+; Parameters: A = expected block type
+; Fails with BLOCK_TYPE_1_EXPECTED to BLOCK_TYPE_4_EXPECTED (the type that was
+; expected) when another block comes.
+; Affects: A, $08, $FA
 API_ENTRYPOINT $e68f
 CheckBlockType:
+	STA DISK_TEMP
+	LDA #FDSCTRL_IRQ | FDSCTRL_START | FDSCTRL_ONE | FDSCTRL_READ | FDSCTRL_MOTOR
+	JSR SetDiskControl
+	JSR ReadByte
+	CMP DISK_TEMP
+	BNE @wrong
 	RTS
+@wrong:
+	LDA DISK_TEMP
+	CLC
+	ADC #BLOCK_TYPE_1_EXPECTED - 1
+	JMP DiskExit
 
 API_ENTRYPOINT $e6b0
 WriteBlockType:
