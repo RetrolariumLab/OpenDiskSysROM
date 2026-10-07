@@ -28,84 +28,118 @@ Modern hardware clones of the FDS RAM Adapter or FPGA re-implementations of the 
 
 ## APIs
 
+Every documented entry point is implemented. The disk routines boot and run
+Super Mario Bros., All Night Nippon Super Mario Bros. and Super Mario Bros. 2
+in MAME, and their writes were checked by reading them back.
+
 | Address | Name | # of Games | Implemented |
 | ------- | ---- | ------- | ----------- |
-| $e149 | Delay131 | | :white_check_mark: |
-| $e153 | Delayms | | :white_check_mark: |
-| $e161 | DisPFObj | | :white_check_mark: |
-| $e16b | EnPFObj | | :white_check_mark: |
-| $e171 | DisObj | | :white_check_mark: |
-| $e178 | EnObj | | :white_check_mark: |
-| $e17e | DisPF | | :white_check_mark: |
-| $e185 | EnPF | | :white_check_mark: |
-| $e18b | NMI | | :white_check_mark: |
-| $e1b2 | VINTWait | | :white_check_mark: |
-| $e1c7 | IRQ | | :white_check_mark: |
-| $e1f8 | LoadFiles | | |
-| $e237 | AppendFile | | |
-| $e239 | WriteFile | | |
-| $e2b7 | CheckFileCount | | |
-| $e2bb | AdjustFileCount | | |
-| $e301 | SetFileCount1 | | |
-| $e305 | SetFileCount | | |
-| $e32a | GetDiskInfo | | |
-| $e3da | AddYtoPtr0A | | |
-| $e3e7 | GetHardCodedPointers | | |
-| $e3ea | GetHardCodedPointersWriteProtected | | |
-| $e445 | CheckDiskHeader | | |
-| $e484 | GetNumFiles | | |
-| $e492 | SetNumFiles | | |
-| $e4a0 | FileMatchTest | 0 | |
-| $e4da | SkipFiles | 0 | |
-| $e4f9 | LoadData | | |
-| $e506 | ReadData | | |
-| $e5b5 | SaveData | | |
-| $e64d | WaitForDriveReady | | |
-| $e685 | StopMotor | | |
-| $e68f | CheckBlockType | | |
-| $e6b0 | WriteBlockType | | |
-| $e6e3 | StartXfer | | |
-| $e706 | EndOfBlockRead | | |
-| $e729 | EndOfBlkWrite | | |
-| $e778 | XferDone | | |
-| $e794 | Xfer1stByte | | |
-| $e7a3 | XferByte | | |
-| $e7bb | VRAMStructWrite | | :white_check_mark: |
-| $e844 | FetchDirectPtr | | :white_check_mark: |
-| $e86a | WriteVRAMBuffers | | :white_check_mark: |
-| $e8b3 | ReadIndividualVRAMBytes | | :white_check_mark: |
-| $e8d2 | PrepareVRAMString | | :white_check_mark: |
-| $e8e1 | PrepareVRAMStrings | | :white_check_mark: |
-| $e94f | GetVRAMBufferByte | | :white_check_mark: |
-| $e97d | Pixel2NamConv | | :white_check_mark: |
-| $e997 | Nam2PixelConv | | :white_check_mark: |
-| $e9b1 | Random | | :white_check_mark: |
-| $e9c8 | SpriteDMA | | :white_check_mark: |
-| $e9d3 | CounterLogic | | :white_check_mark: |
-| $e9eb | ReadPads | | :white_check_mark: |
-| $ea1a | ReadDownPads | | :white_check_mark: |
-| $ea1f | ReadOrDownPads | | :white_check_mark: |
-| $ea36 | ReadDownVerifyPads | | :white_check_mark: |
-| $ea4c | ReadOrDownVerifyPads | | :white_check_mark: |
-| $ea68 | ReadDownExpPads | | :white_check_mark: |
-| $ea84 | VRAMFill | | :white_check_mark: |
-| $ead2 | MemFill | | :white_check_mark: |
-| $eaea | SetScroll | | :white_check_mark: |
-| $eafd | JumpEngine | | :white_check_mark: |
-| $eb13 | ReadKeyboard | 0 | |
-| $ebaf | LoadTileset | | :white_check_mark: |
-| $ec22 | unk_EC22 | | |
-| $ee17 | StartMotor | | |
+| $e149 | Delay131 |  | :white_check_mark: |
+| $e153 | Delayms |  | :white_check_mark: |
+| $e161 | DisPFObj |  | :white_check_mark: |
+| $e16b | EnPFObj |  | :white_check_mark: |
+| $e171 | DisObj |  | :white_check_mark: |
+| $e178 | EnObj |  | :white_check_mark: |
+| $e17e | DisPF |  | :white_check_mark: |
+| $e185 | EnPF |  | :white_check_mark: |
+| $e18b | NMI |  | :white_check_mark: |
+| $e1b2 | VINTWait |  | :white_check_mark: |
+| $e1c7 | IRQ |  | :white_check_mark: |
+| $e1f8 | LoadFiles |  | :white_check_mark: |
+| $e237 | AppendFile |  | :white_check_mark: |
+| $e239 | WriteFile |  | :white_check_mark: |
+| $e2b7 | CheckFileCount |  | :white_check_mark: |
+| $e2bb | AdjustFileCount |  | :white_check_mark: |
+| $e301 | SetFileCount1 |  | :white_check_mark: |
+| $e305 | SetFileCount |  | :white_check_mark: |
+| $e32a | GetDiskInfo |  | :white_check_mark: |
+| $e3da | AddYtoPtr0A |  | :white_check_mark: |
+| $e3e7 | GetHardCodedPointers |  | :white_check_mark: |
+| $e3ea | GetHardCodedPointersWriteProtected |  | :white_check_mark: |
+| $e445 | CheckDiskHeader |  | :white_check_mark: |
+| $e484 | GetNumFiles |  | :white_check_mark: |
+| $e492 | SetNumFiles |  | :white_check_mark: |
+| $e4a0 | FileMatchTest | 0 | :white_check_mark: |
+| $e4da | SkipFiles | 0 | :white_check_mark: |
+| $e4f9 | LoadData |  | :white_check_mark: |
+| $e506 | ReadData |  | :white_check_mark: |
+| $e5b5 | SaveData |  | :white_check_mark: |
+| $e64d | WaitForDriveReady |  | :white_check_mark: |
+| $e685 | StopMotor |  | :white_check_mark: |
+| $e68f | CheckBlockType |  | :white_check_mark: |
+| $e6b0 | WriteBlockType |  | :white_check_mark: |
+| $e6e3 | StartXfer |  | :white_check_mark: |
+| $e706 | EndOfBlockRead |  | :white_check_mark: |
+| $e729 | EndOfBlkWrite |  | :white_check_mark: |
+| $e778 | XferDone |  | :white_check_mark: |
+| $e794 | Xfer1stByte |  | :white_check_mark: |
+| $e7a3 | XferByte |  | :white_check_mark: |
+| $e7bb | VRAMStructWrite |  | :white_check_mark: |
+| $e844 | FetchDirectPtr |  | :white_check_mark: |
+| $e86a | WriteVRAMBuffers |  | :white_check_mark: |
+| $e8b3 | ReadIndividualVRAMBytes |  | :white_check_mark: |
+| $e8d2 | PrepareVRAMString |  | :white_check_mark: |
+| $e8e1 | PrepareVRAMStrings |  | :white_check_mark: |
+| $e94f | GetVRAMBufferByte |  | :white_check_mark: |
+| $e97d | Pixel2NamConv |  | :white_check_mark: |
+| $e997 | Nam2PixelConv |  | :white_check_mark: |
+| $e9b1 | Random |  | :white_check_mark: |
+| $e9c8 | SpriteDMA |  | :white_check_mark: |
+| $e9d3 | CounterLogic |  | :white_check_mark: |
+| $e9eb | ReadPads |  | :white_check_mark: |
+| $ea1a | ReadDownPads |  | :white_check_mark: |
+| $ea1f | ReadOrDownPads |  | :white_check_mark: |
+| $ea36 | ReadDownVerifyPads |  | :white_check_mark: |
+| $ea4c | ReadOrDownVerifyPads |  | :white_check_mark: |
+| $ea68 | ReadDownExpPads |  | :white_check_mark: |
+| $ea84 | VRAMFill |  | :white_check_mark: |
+| $ead2 | MemFill |  | :white_check_mark: |
+| $eaea | SetScroll |  | :white_check_mark: |
+| $eafd | JumpEngine |  | :white_check_mark: |
+| $eb13 | ReadKeyboard | 0 | :white_check_mark: |
+| $ebaf | LoadTileset |  | :white_check_mark: |
+| $ec22 | UploadObject |  | :white_check_mark: |
+| $ee17 | StartMotor |  | :white_check_mark: |
 
 ## Initialization
+
+On a cold start the BIOS clears the console's state and goes to the boot
+loader; on a soft reset with a game in RAM ($0102/$0103 = $35/$53 or
+$35/$AC) it starts that game through its reset vector again. The boot loader
+shows INSERT A DISK in the BIOS font until a disk is in the drive, then loads
+every file whose ID is not above the disk's boot file code. A failed load
+shows DISK ERROR with the error number for about two seconds and tries again.
+There is no animation: the original's Mario and Luigi are Nintendo's.
+
+## Tests
+
+The scripts in `tests/` assemble the BIOS, start MAME's `fds` system with it
+from a private ROM path and check what the routines did through MAME's Lua
+interface. Each takes a disk image and MAME (`--mame` or the `MAME` variable),
+and asm6f (`--asm6f`, the `ASM6F` variable or `asm6f` on PATH):
+
+| Script | Checks |
+| ------ | ------ |
+| `boot_test.py` | the boot loader puts every boot file in place |
+| `loadfiles_test.py` | LoadFiles on a running game, including a wrong disk ID |
+| `writefile_test.py` | WriteFile, AppendFile, the file count calls and GetDiskInfo |
+| `keyboard_test.py` | ReadKeyboard with and without MAME's Family BASIC keyboard |
+| `uploadobject_test.py` | UploadObject against a model of the object structure |
+
+MAME keeps disk writes in memory, so the image is never changed. In a window
+(the tests run without one) MAME first asks for a key press, because the BIOS
+is not the one it knows.
 
 # Building
 
 To build, use [asm6f](https://github.com/freem/asm6f).
 
 ```
-asm6f freedisksys.asm opendisksys.bin
+asm6f freedisksys.asm build/opendisksys.bin
 ```
+
+MAME and most emulators look for the BIOS as `disksys.rom` or, in MAME's
+`fds` ROM set, `rp2c33a-01a.bin`.
 
 The `-l` flag is very useful for development - it shows the addresses assigned
 to each instruction, so you can easily see how much room remains for a given
