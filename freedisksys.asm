@@ -85,6 +85,8 @@ DISK_SIZE		EQU $0C ; bytes of file data left
 DISK_LOADED		EQU $0E ; files loaded so far (returned in Y)
 DISK_FILE_TYPE	EQU $0F ; 0 = program, 1 = character, 2 = nametable
 
+FILE_LIST_LENGTH	EQU 20 ; a file list holds up to 20 IDs
+
 ; Error codes:
 OK EQU $00 ; no error
 DISK_NOT_SET EQU $01 ; disk set, ($4032.0) disk not set
@@ -235,9 +237,36 @@ SetNumFiles:
 ; found after 20 bytes, or a -1 entry is encountered, [$09] is set to -1. If
 ; the first byte in the string is -1, the BootID number is used for matching
 ; files (any FileID that is not greater than the BootID qualifies as a match).
-; Parameters: Pointer to FileID list at $02
+; Parameters: Pointer to FileID list at $02, the file's ID in $08, the boot
+; file code in $07 (CheckDiskHeader keeps it there)
+; Affects: A, Y, $09, $0E
 API_ENTRYPOINT $e4a0
 FileMatchTest:
+	LDY #0
+	LDA (DISK_PTR2),Y
+	CMP #$FF
+	BNE @list
+	LDA DISK_BOOT_CODE	; boot files: any ID not above the boot file code
+	CMP DISK_TEMP
+	BCS @match
+	BCC @noMatch
+@list:
+	LDA (DISK_PTR2),Y
+	CMP #$FF
+	BEQ @noMatch
+	CMP DISK_TEMP
+	BEQ @match
+	INY
+	CPY #FILE_LIST_LENGTH
+	BNE @list
+@noMatch:
+	LDA #$FF
+	STA DISK_MATCH
+	RTS
+@match:
+	LDA #0
+	STA DISK_MATCH
+	INC DISK_LOADED
 	RTS
 
 ; Skips over specified number of files.
