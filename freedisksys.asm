@@ -519,9 +519,44 @@ EndOfBlockRead:
 	LDA #BLOCK_FAILED_CRC
 	JMP DiskExit
 
+; Finishes writing a block: waits until the RAM adapter has put out the last
+; byte, has it append the two CRC bytes, then goes back to reading with no
+; block started, which stops the writing. With C set another block follows in
+; the same pass: two zero bytes then go to $4024 while the CRC is written. The
+; adapter ignores them, but emulators that store every $4024 byte in a disk
+; image without CRCs (MAME) store them and step back two bytes when the block
+; ends, as they do after reading the CRC, so the next block lands right after
+; this one.
+; Parameters: C = 1 when another block is written next
+; Fails with DISK_FULL when the drive reaches the end of the disk.
+; Affects: A, $FA
 API_ENTRYPOINT $e729
 EndOfBlkWrite:
-	RTS
+	PHP
+@last:
+	LDA DISKSTATUS
+	AND #%00000010		; the last byte is on its way
+	BEQ @last
+	LDA #FDSCTRL_IRQ | FDSCTRL_START | FDSCTRL_CRC | FDSCTRL_ONE | FDSCTRL_MOTOR
+	JSR SetDiskControl
+	PLP
+	BCC @crc
+	LDA #0
+	STA WRITEDATA
+	STA WRITEDATA
+@crc:
+	JSR Delay131		; two byte times (about 300 cycles) and a margin
+	JSR Delay131
+	JSR Delay131
+	JSR Delay131
+	LDA DRIVESTATUS
+	AND #%00000010		; bit 1: the drive stopped at the end of the disk
+	BNE @full
+	LDA #FDSCTRL_ONE | FDSCTRL_READ | FDSCTRL_MOTOR
+	JMP SetDiskControl
+@full:
+	LDA #DISK_FULL
+	JMP DiskExit
 
 ; Ends the transfer of a block: clears the start, CRC and byte IRQ bits of
 ; $4025 and leaves the motor, mode and mirroring as they are. Reading $4030
