@@ -500,8 +500,17 @@ API_ENTRYPOINT $e729
 EndOfBlkWrite:
 	RTS
 
+; Ends the transfer of a block: clears the start, CRC and byte IRQ bits of
+; $4025 and leaves the motor, mode and mirroring as they are. Reading $4030
+; drops a byte transfer flag that may still be pending.
+; Affects: A, $FA
 API_ENTRYPOINT $e778
 XferDone:
+	LDA ZP_FDSCTRL
+	AND #$FF ^ (FDSCTRL_START | FDSCTRL_CRC | FDSCTRL_IRQ)
+	STA ZP_FDSCTRL
+	STA FDSCTRL
+	LDA DISKSTATUS
 	RTS
 
 ; Starts the transfer of a block and exchanges its first byte: sets the start
