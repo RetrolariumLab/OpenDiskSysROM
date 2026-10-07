@@ -321,9 +321,25 @@ API_ENTRYPOINT $e6e3
 StartXfer:
 	RTS
 
+; Finishes reading a block: reads the two CRC bytes that follow its data with
+; the CRC bit of $4025 set, so the RAM adapter checks them, then ends the
+; transfer with the motor still running for the next block.
+; Fails with BLOCK_FAILED_CRC when the adapter reports a bad CRC ($4030 bit 4).
+; Affects: A, $FA
 API_ENTRYPOINT $e706
 EndOfBlockRead:
-	RTS
+	LDA #FDSCTRL_IRQ | FDSCTRL_START | FDSCTRL_CRC | FDSCTRL_ONE | FDSCTRL_READ | FDSCTRL_MOTOR
+	JSR SetDiskControl
+	JSR ReadByte
+	JSR ReadByte
+	LDA DISKSTATUS
+	AND #%00010000		; bit 4: CRC error
+	BNE @crc
+	LDA #FDSCTRL_ONE | FDSCTRL_READ | FDSCTRL_MOTOR
+	JMP SetDiskControl
+@crc:
+	LDA #BLOCK_FAILED_CRC
+	JMP DiskExit
 
 API_ENTRYPOINT $e729
 EndOfBlkWrite:
