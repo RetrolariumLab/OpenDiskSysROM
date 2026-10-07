@@ -279,8 +279,76 @@ API_ENTRYPOINT $e4f9
 LoadData:
 	RTS
 
+; Reads a file data block. Program files go to CPU memory at $0A-$0B,
+; character and nametable files to PPU memory there (written through $2007
+; with the address incrementing by 1, so rendering must be off). The bytes are
+; read past instead when $09 is not 0 (the file was not asked for) or when a
+; program file would go below $0200: zero page and the stack belong to the
+; BIOS and its caller.
+; Parameters: $09 = 0 to load, $0A-$0B = address, $0C-$0D = size, $0F = type
+; Affects: A, Y, $08, $0A-$0D, $FA
 API_ENTRYPOINT $e506
 ReadData:
+	LDA #4
+	JSR CheckBlockType
+	LDA DISK_MATCH
+	BNE @skip
+	LDA DISK_FILE_TYPE
+	BNE @ppu
+	LDA DISK_DEST+1
+	CMP #$02
+	BCC @skip
+	LDY #0
+@cpu:
+	JSR CountDataByte
+	BEQ @done
+	JSR ReadByte
+	STA (DISK_DEST),Y
+	INC DISK_DEST
+	BNE @cpu
+	INC DISK_DEST+1
+	JMP @cpu
+@ppu:
+	LDA PPUSTATUS		; the next $2006 write is the high byte
+	LDA DISK_DEST+1
+	STA PPUADDR
+	LDA DISK_DEST
+	STA PPUADDR
+	LDA ZP_PPUCTRL
+	AND #%11111011		; increment the address by 1
+	STA PPUCTRL
+@ppuLoop:
+	JSR CountDataByte
+	BEQ @ppuDone
+	JSR ReadByte
+	STA PPUDATA
+	JMP @ppuLoop
+@ppuDone:
+	LDA ZP_PPUCTRL
+	STA PPUCTRL
+	JMP @done
+@skip:
+	JSR CountDataByte
+	BEQ @done
+	JSR ReadByte
+	JMP @skip
+@done:
+	JMP EndOfBlockRead
+
+; Counts one byte off the file data left in $0C-$0D.
+; Returns: Z set when there was none left
+; Affects: A
+CountDataByte:
+	LDA DISK_SIZE
+	ORA DISK_SIZE+1
+	BEQ @none
+	LDA DISK_SIZE
+	BNE @low
+	DEC DISK_SIZE+1
+@low:
+	DEC DISK_SIZE
+	LDA #1
+@none:
 	RTS
 
 API_ENTRYPOINT $e5b5
