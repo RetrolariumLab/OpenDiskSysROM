@@ -255,8 +255,16 @@ API_ENTRYPOINT $e64d
 WaitForDriveReady:
 	RTS
 
+; Stops the drive the way the BIOS leaves it after reset: motor off, transfer
+; reset held, read mode, no block transfer and no byte IRQ. Reading $4030 then
+; drops a byte transfer flag (and its IRQ) that may still be pending, so a game
+; that enables interrupts afterwards does not take a stray disk IRQ.
+; Affects: A, $FA
 API_ENTRYPOINT $e685
 StopMotor:
+	LDA #FDSCTRL_ONE | FDSCTRL_READ | FDSCTRL_RESET
+	JSR SetDiskControl
+	LDA DISKSTATUS
 	RTS
 
 API_ENTRYPOINT $e68f
