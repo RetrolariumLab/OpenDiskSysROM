@@ -866,9 +866,75 @@ JumpEngine:
 ; (indirect) jump!
 	JMP ($00)
 
-; Read Family Basic Keyboard expansion
+KEYBOARD_RESET	EQU %00000001 ; $4016: back to row 0, column 0
+KEYBOARD_COLUMN	EQU %00000010 ; column 1; 1 to 0 moves to the next row
+KEYBOARD_ENABLE	EQU %00000100 ; without it the matrix reads 0
+KEYBOARD_ROWS	EQU 9
+
+; Reads the Family BASIC keyboard on the expansion port. Its 9 rows of 2 x 4
+; keys go to $00 (row 8) down to $08 (row 0), column 0 in the low nibble and
+; column 1 in the high one, 1 for a pressed key. A keyboard is known by its
+; keyless tenth row, which reads as four released keys; with nothing on the
+; port everything reads 0, and the data is cleared.
+; Parameters: $FB = the game's latch bits for $4016 (bits 3-7 are kept)
+; Returns: A = $FF with a keyboard, $00 without
+; Affects: A, X, Y, $00-$08, $FB (bits 0-2 cleared)
 API_ENTRYPOINT $eb13
 ReadKeyboard:
+	LDA ZP_JOYPAD1
+	AND #%11111000
+	STA ZP_JOYPAD1
+	LDA #KEYBOARD_RESET | KEYBOARD_ENABLE
+	JSR KeyboardSelect
+	LDX #KEYBOARD_ROWS - 1
+@row:
+	LDA #KEYBOARD_ENABLE	; column 0, the next row after column 1
+	JSR KeyboardSelect
+	STA $00,X
+	LDA #KEYBOARD_COLUMN | KEYBOARD_ENABLE
+	JSR KeyboardSelect
+	ASL A
+	ASL A
+	ASL A
+	ASL A
+	ORA $00,X
+	EOR #$FF				; pressed keys read 0
+	STA $00,X
+	DEX
+	BPL @row
+	LDA #KEYBOARD_ENABLE	; the tenth row
+	JSR KeyboardSelect
+	TAY
+	LDA ZP_JOYPAD1			; keyboard off
+	STA JOYPAD1
+	CPY #%00001111
+	BNE @none
+	LDA #$FF
+	RTS
+@none:
+	LDA #0
+	LDX #KEYBOARD_ROWS - 1
+@clear:
+	STA $00,X
+	DEX
+	BPL @clear
+	RTS
+
+; Writes the keyboard bits in A to $4016 with the game's latch bits, waits
+; about 50 cycles for the matrix to settle and reads the four keys selected.
+; Parameters: A = keyboard bits
+; Returns: A = $4017 bits 1-4 in bits 0-3
+; Affects: A, Y
+KeyboardSelect:
+	ORA ZP_JOYPAD1
+	STA JOYPAD1
+	LDY #10
+@settle:
+	DEY
+	BNE @settle
+	LDA JOYPAD2
+	LSR A
+	AND #%00001111
 	RTS
 
 INCLUDE loadtileset.asm
