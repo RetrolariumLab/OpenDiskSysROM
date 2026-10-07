@@ -1,14 +1,24 @@
-# FreeDiskSysROM
+# OpenDiskSysROM
+
+OpenDiskSysROM continues [FreeDiskSysROM](https://github.com/jamesathey/freedisksysrom)
+by James Athey, which has not changed since 2020. It keeps that project's
+history, goal, rules and license (LGPL-3.0); the work here adds what was
+missing to run games: the disk I/O routines and the boot loader. It is
+developed for [Retrolarium](https://github.com/Retrolarium), whose studio
+plays Famicom Disk System games in MAME without asking for Nintendo's BIOS.
+
+Files James Athey wrote keep his copyright notice; files changed or added
+here say so in their header.
 
 This project has one goal - a compatible re-implementation of the Famicom Disk System BIOS under an OSS license. Unlike the Famicom console itself, which has no program ROM built-in, the Famicom Disk System includes an 8 KiB PRG-ROM containing disk I/O routines, VRAM transfer routines, joypad reading code, an animation featuring Mario and Luigi when no disk is present in the drive, and more. The code, data, graphics, music, and animation contained in the original BIOS are copyrighted by Nintendo.
 
-FreeDiskSysROM aims to provide a replacement for the original FDS BIOS that can be freely redistributed and that is capable of running all published FDS software.
+OpenDiskSysROM aims to provide a replacement for the original FDS BIOS that can be freely redistributed and that is capable of running all published FDS software.
 
 # Audience
 
 ## Emulators
 
-Famicom and NES emulators historically require a dump of the Famicom Disk System BIOS to be able to emulate FDS titles. Emulators can ship FreeDiskSysROM with their installers instead of requiring end-users to either copy the ROM out of their own FDS hardware or breaking copyright law by downloading a BIOS rip from elsewhere on the Internet.
+Famicom and NES emulators historically require a dump of the Famicom Disk System BIOS to be able to emulate FDS titles. Emulators can ship OpenDiskSysROM with their installers instead of requiring end-users to either copy the ROM out of their own FDS hardware or breaking copyright law by downloading a BIOS rip from elsewhere on the Internet.
 
 ## Clone hardware
 
@@ -93,7 +103,9 @@ Modern hardware clones of the FDS RAM Adapter or FPGA re-implementations of the 
 
 To build, use [asm6f](https://github.com/freem/asm6f).
 
-```asm6f freedisksys.asm```
+```
+asm6f freedisksys.asm opendisksys.bin
+```
 
 The `-l` flag is very useful for development - it shows the addresses assigned
 to each instruction, so you can easily see how much room remains for a given
@@ -108,6 +120,6 @@ Rules:
 
 # License
 
-FreeDiskSysROM is licensed under the GNU LGPL v3. The intent in using this license is to allow anyone to replace the 8 KiB official FDS BIOS with FreeDiskSysROM, whether for commerical or non-commercial purposes, so long as the source of FreeDiskSysROM (including any modifications) is made available to the end-user under the same license.
+OpenDiskSysROM, like FreeDiskSysROM, is licensed under the GNU LGPL v3. The intent in using this license is to allow anyone to replace the 8 KiB official FDS BIOS with OpenDiskSysROM, whether for commerical or non-commercial purposes, so long as the source of OpenDiskSysROM (including any modifications) is made available to the end-user under the same license.
 
-Although the Famicom does not have an OS or any concept of dynamic linking, the FDS BIOS is analogous to a system library in practice. FDS titles, FDS emulators, and FDS clone systems are all permitted to utilize FreeDiskSysROM without regard to or changes to the licenses of their own code.
+Although the Famicom does not have an OS or any concept of dynamic linking, the FDS BIOS is analogous to a system library in practice. FDS titles, FDS emulators, and FDS clone systems are all permitted to utilize OpenDiskSysROM without regard to or changes to the licenses of their own code.
