@@ -213,9 +213,15 @@ CheckDiskHeader:
 	JMP CheckDiskHeaderImpl
 
 ; Reads number of files stored on disk, stores the result in $06
+; It is the file amount block, which follows the disk info block.
+; Affects: A, $06, $08, $FA
 API_ENTRYPOINT $e484
 GetNumFiles:
-	RTS
+	LDA #2
+	JSR CheckBlockType
+	JSR ReadByte
+	STA DISK_FILE_COUNT
+	JMP EndOfBlockRead
 
 ; Writes new number of files to disk header.
 ; Parameters: A = number of files
