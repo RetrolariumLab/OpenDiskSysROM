@@ -203,14 +203,24 @@ AdjustFileCount:
 ; Returns: A = error #
 API_ENTRYPOINT $e301
 SetFileCount1:
-	RTS
+	CLC
+	ADC #1
+	NOP					; SetFileCount follows
+SetFileCount1End:
 
 ; Set the file count to A
 ; Parameters: Pointer to Disk ID, A = file count
 ; Returns: A = error #
 API_ENTRYPOINT $e305
 SetFileCount:
-	RTS
+	JSR GetHardCodedPointersWriteProtected	; one pointer: A goes to $02
+	JSR StartMotor
+	JSR WaitForDriveReady
+	JSR CheckDiskHeader
+	LDA DISK_PTR2
+	JSR SetNumFiles
+	LDA #OK
+	JMP DiskExit
 
 ; Fills provided DiskInfo structure with data read off the current disk.
 ; Parameters: Pointer to Disk Info
