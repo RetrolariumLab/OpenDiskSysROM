@@ -214,8 +214,18 @@ API_ENTRYPOINT $e32a
 GetDiskInfo:
 	RTS
 
+; Adds Y to the 16-bit pointer at $0A-$0B.
+; Parameters: Y = amount to add
+; Affects: A, $0A, $0B
 API_ENTRYPOINT $e3da
 AddYtoPtr0A:
+	TYA
+	CLC
+	ADC DISK_DEST
+	STA DISK_DEST
+	BCC @done
+	INC DISK_DEST+1
+@done:
 	RTS
 
 INCLUDE gethardcodedpointers.asm
