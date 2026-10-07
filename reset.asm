@@ -107,23 +107,43 @@ RESET:
 ; NMI and IRQ actions take their reset values before anything loads ($C0: the
 ; game's third NMI vector, $80: the BIOS acknowledges IRQs): a boot file that
 ; lands on PPUCTRL and turns NMIs on, as some games do to cut the boot short,
-; reaches the game's own NMI handler. Until a disk is in the drive, and after
-; a failed load, it waits and tries again.
+; reaches the game's own NMI handler. Until a disk is in the drive it asks for
+; one; a failed load shows its error number for about two seconds and tries
+; again. The screen is dark while the files load into the PPU.
 Boot:
     LDA #$C0
     STA NMI_ACTION
     LDA #$80
     STA IRQ_ACTION
+    JSR BootScreenSetup
 @insert:
     LDA DRIVESTATUS
     LSR A ; bit 0: no disk
-    BCS @insert
+    BCC @load
+    LDX #BOOT_INSERT
+    JSR BootScreenMessage
+@wait:
+    LDA DRIVESTATUS
+    LSR A
+    BCS @wait
+@load:
+    JSR BootScreenOff
     JSR LoadFiles
     DW BootDiskId
     DW BootFileList
     BEQ @start
-    LDY #0 ; about a quarter of a second before trying again
+    LDX #BOOT_ERROR
+    JSR BootScreenMessage
+    LDA #8 ; eight times a quarter of a second
+@pause:
+    PHA ; Delayms uses X and Y
+    LDY #0
     JSR Delayms
+    PLA
+    SEC
+    SBC #1
+    BNE @pause
+    JSR BootScreenSetup
     JMP @insert
 @start:
     LDA #$AC

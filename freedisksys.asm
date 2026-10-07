@@ -892,6 +892,7 @@ INCLUDE checkdiskheader.asm
 INCLUDE readfileheader.asm
 INCLUDE writefile.asm
 INCLUDE getdiskinfo.asm
+INCLUDE bootscreen.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
