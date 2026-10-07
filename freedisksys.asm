@@ -464,6 +464,8 @@ INCLUDE startmotor.asm
 ; private functions
 
 INCLUDE diskcontrol.asm
+INCLUDE diskentry.asm
+INCLUDE diskexit.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU

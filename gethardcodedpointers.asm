@@ -1,5 +1,6 @@
 ; FreeDiskSysROM
 ; Copyright (c) 2018 James Athey
+; Modified for OpenDiskSysROM, Copyright (c) 2026 Daniel Oranguthang
 ;
 ; This program is free software: you can redistribute it and/or modify it under
 ; the terms of the GNU Lesser General Public License version 3 as published by
@@ -52,20 +53,12 @@
 API_ENTRYPOINT $e3e7
 GetHardCodedPointers:
     CLC
-    BCC GetHardCodedPointersImpl
+    BCC GetHardCodedPointersJump
 
 ; Same as GetHardCodedPointers, except that
 ; Returns: A == OK (0) if no error, DISK_NOT_SET (1) if disk is not set, and WRITE_PROTECTED (3) if the disk is write-protected.
 API_ENTRYPOINT $e3ea
 GetHardCodedPointersWriteProtected:
     SEC
-GetHardCodedPointersImpl:
-
-    BCC @end ; skip write-protect check if C is false
-    LDA DRIVESTATUS
-    AND #%00000100 ; bit 2 contains the write-protect status
-    BEQ @end
-
-    ; error handling
-@end:
-	RTS
+GetHardCodedPointersJump:
+    JMP GetHardCodedPointersImpl
