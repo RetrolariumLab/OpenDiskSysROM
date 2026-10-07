@@ -110,7 +110,9 @@ BLOCK_TYPE_4_EXPECTED EQU $25 ; disk trouble, block type 4 expected
 BLOCK_FAILED_CRC EQU $27 ;	disk trouble, ($4030.4) block failed CRC
 EOF_READ EQU $28 ; disk trouble, ($4030.6) file ends prematurely during read
 EOF_WRITE EQU $29 ; disk trouble, ($4030.6) file ends prematurely during write
+READBACK_FAILED EQU $26 ; disk trouble, what was written does not read back
 DISK_FULL EQU $30 ; disk trouble, ($4032.1) disk is full
+FILE_COUNT_EXCEEDED EQU $31 ; disk trouble, a file was to go past the files on the disk
 
 MACRO API_ENTRYPOINT address
 	IF $ > #address
@@ -166,7 +168,7 @@ LoadFiles:
 ; Returns: A = error #
 API_ENTRYPOINT $e237
 AppendFile:
-	RTS
+	LDA #$FF			; WriteFile follows: $FF puts the file after the last one
 
 ; Same as "Append File", but instead of writing the file to the end of the
 ; disk, A specifies the sequential position on the disk to write the file (0
@@ -175,9 +177,10 @@ AppendFile:
 ; the written one.
 ; Parameters: Pointer to Disk ID, Pointer to File Header, A = file #
 ; Returns: A = error #
+; See SaveData for the file header structure.
 API_ENTRYPOINT $e239
 WriteFile:
-	RTS
+	JMP WriteFileImpl
 
 ; Reads in disk's file count, compares it to A, then sets the disk's file count
 ; to A.
@@ -843,6 +846,7 @@ INCLUDE diskexit.asm
 INCLUDE diskbytes.asm
 INCLUDE checkdiskheader.asm
 INCLUDE readfileheader.asm
+INCLUDE writefile.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
