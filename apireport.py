@@ -72,7 +72,7 @@ apis = {
     0xeafd: ['JumpEngine', 0],
     0xeb13: ['ReadKeyboard', 0],
     0xebaf: ['LoadTileset', 0],
-    0xec22: ['unk_EC22', 0],
+    0xec22: ['UploadObject', 0],
     0xee17: ['StartMotor', 0],
 }
 

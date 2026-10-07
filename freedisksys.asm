@@ -939,12 +939,26 @@ KeyboardSelect:
 
 INCLUDE loadtileset.asm
 
-; Some kind of logic that some games use. (detail is under analysis)
-; Parameters: $00-$01 Pointer to structure... ?
-; Affects: A, X, Y, $02, $03, $04, $05, $06, $07, $08, $09
+; Puts an object made of several sprites into the OAM buffer at $0200. The
+; object structure:
+;   0     $00: shown, $01-$7F: left as it is in OAM, $80-$FF: hidden (its
+;         sprites moved below the screen)
+;   1, 2  Y and its fraction      3, 4  X and its fraction
+;   5     animation frame
+;   6, 7  tile arrangement, high byte first: below $100 the first tile of
+;         frame 0, the frames following one another; otherwise the address
+;         of a table holding the tiles of each frame in turn
+;   8     bit 4: flipped horizontally, bit 0: flipped vertically
+;   9     palette (0-3)
+;   10    height in tiles in the high nibble, width in the low nibble
+;   11    first OAM entry ($0200 + 4 x entry)
+; A frame lists its tiles column by column, top to bottom. A flipped object
+; has its columns (or rows) mirrored as well as each tile.
+; Parameters: $00-$01 = pointer to the object structure
+; Affects: A, X, Y, $02-$0C
 API_ENTRYPOINT $ec22
-unk_EC22:
-	RTS
+UploadObject:
+	JMP UploadObjectImpl
 
 INCLUDE startmotor.asm
 
@@ -959,6 +973,7 @@ INCLUDE readfileheader.asm
 INCLUDE writefile.asm
 INCLUDE getdiskinfo.asm
 INCLUDE bootscreen.asm
+INCLUDE uploadobject.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
