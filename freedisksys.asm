@@ -96,7 +96,7 @@ WRONG_GAME_VER EQU $06 ; Wrong game version
 WRONG_SIDE_NUM EQU $07 ; a,b side, wrong side number
 WRONG_DISK_NUM EQU $08 ; disk no., wrong disk number
 WRONG_ADDL_DISK_ID1 EQU $09 ; wrong additional disk ID 1
-WRONG_ADDL_DISK_ID2 EQU $0a ; wrong additional disk ID 2
+WRONG_ADDL_DISK_ID2 EQU $10 ; wrong value in the last disk ID byte (the codes are BCD-like)
 APPROVAL_CHECK_FAILED EQU $20 ; disk trouble, approval check failed
 WRONG_SIGNATURE EQU $21 ; disk trouble, '*NINTENDO-HVC*' string in block 1 doesn't match
 BLOCK_TYPE_1_EXPECTED EQU $22 ; disk trouble, block type 1 expected
@@ -207,9 +207,10 @@ INCLUDE gethardcodedpointers.asm
 ; placed in the equivelant place in the compare string. Otherwise, if the
 ; comparison fails, an appropriate error will be generated.
 ; Parameters: Pointer to 10 byte string at $00
+; Also keeps the disk's boot file code in $07 for FileMatchTest.
 API_ENTRYPOINT $e445
 CheckDiskHeader:
-	RTS
+	JMP CheckDiskHeaderImpl
 
 ; Reads number of files stored on disk, stores the result in $06
 API_ENTRYPOINT $e484
@@ -539,6 +540,7 @@ INCLUDE diskcontrol.asm
 INCLUDE diskentry.asm
 INCLUDE diskexit.asm
 INCLUDE diskbytes.asm
+INCLUDE checkdiskheader.asm
 
 ; Checks whether the little-endian address provided in ($02) plus the offset in
 ; $04 is in the range $3Fxx (or one of its mirrors). Checks the current PPU
