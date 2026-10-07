@@ -87,6 +87,7 @@ DISK_FILE_TYPE	EQU $0F ; 0 = program, 1 = character, 2 = nametable
 
 FILE_LIST_LENGTH	EQU 20 ; a file list holds up to 20 IDs
 GAP_LENGTH			EQU 122 ; bytes of gap written before a block (976 bits, as on disks)
+FILE_HEADER_ON_DISK	EQU 14 ; bytes of a file header structure that go to disk
 
 ; Error codes:
 OK EQU $00 ; no error
@@ -404,9 +405,79 @@ CountDataByte:
 @none:
 	RTS
 
+; Writes a file where the drive is: its header block, then its data block,
+; from the file header structure at ($02): file ID, name (8), load address,
+; size, file type (as they go to disk), then the source address and source
+; type (0 = CPU memory, 1 = PPU memory, read through $2007), which stay here.
+; Parameters: A = file number, ($02) = file header structure
+; Affects: A, X, Y, $0A-$0D, $0F, $FA
 API_ENTRYPOINT $e5b5
 SaveData:
-	RTS
+	PHA
+	LDA #3
+	JSR WriteBlockType
+	PLA
+	JSR WriteByte		; file number
+	LDY #0
+@header:
+	LDA (DISK_PTR2),Y
+	JSR WriteByte
+	INY
+	CPY #FILE_HEADER_ON_DISK
+	BNE @header
+	SEC
+	JSR EndOfBlkWrite	; the data block follows
+	LDY #11
+	LDA (DISK_PTR2),Y
+	STA DISK_SIZE
+	INY
+	LDA (DISK_PTR2),Y
+	STA DISK_SIZE+1
+	LDY #14
+	LDA (DISK_PTR2),Y
+	STA DISK_DEST
+	INY
+	LDA (DISK_PTR2),Y
+	STA DISK_DEST+1
+	INY
+	LDA (DISK_PTR2),Y
+	STA DISK_FILE_TYPE
+	LDA #4
+	JSR WriteBlockType
+	LDY #0
+	LDA DISK_FILE_TYPE
+	BEQ @cpu
+	LDA PPUSTATUS		; the next $2006 write is the high byte
+	LDA DISK_DEST+1
+	STA PPUADDR
+	LDA DISK_DEST
+	STA PPUADDR
+	LDA ZP_PPUCTRL
+	AND #%11111011		; increment the address by 1
+	STA PPUCTRL
+	LDA PPUDATA			; the first read only fills the PPU's buffer
+@ppu:
+	JSR CountDataByte
+	BEQ @ppuDone
+	LDA PPUDATA
+	JSR WriteByte
+	JMP @ppu
+@ppuDone:
+	LDA ZP_PPUCTRL
+	STA PPUCTRL
+	JMP @done
+@cpu:
+	JSR CountDataByte
+	BEQ @done
+	LDA (DISK_DEST),Y
+	JSR WriteByte
+	INC DISK_DEST
+	BNE @cpu
+	INC DISK_DEST+1
+	JMP @cpu
+@done:
+	CLC
+	JMP EndOfBlkWrite
 
 ; Waits until the drive, spun up by StartMotor, has its head at the start of
 ; the disk ($4032 bit 1 clear). The battery is measured first, while the motor
