@@ -33,3 +33,46 @@ DiskExit:
 	PLP
 	AND #$FF
 	RTS
+
+; Runs the rest of the routine that calls it (the code after its JSR
+; TwoAttempts, which ends in DiskExit) up to twice: an attempt that fails is
+; made once more, as the BIOS does for LoadFiles, WriteFile and AppendFile.
+; Each attempt starts with interrupts masked, no files counted as loaded and
+; DISK_SAVED_SP set so that DiskExit comes back here; the last result goes to
+; the program through DiskExit. A byte the routine pushed just before its JSR
+; is at TRY_PUSHED + DISK_SAVED_SP during an attempt.
+; Affects: A, X, Y, $08
+TRY_PUSHED	EQU $0107
+
+TwoAttempts:
+	LDA DISK_SAVED_SP
+	PHA					; the program's stack, for the last DiskExit
+	LDA #2
+	PHA					; attempts left
+@attempt:
+	LDA #>(@back - 1)
+	PHA
+	LDA #<(@back - 1)
+	PHA
+	TSX
+	STX DISK_SAVED_SP
+	LDA $0106,X			; the attempt starts where JSR TwoAttempts returns to
+	PHA
+	LDA $0105,X
+	PHA
+	LDA #0
+	STA DISK_LOADED
+	SEI
+	RTS
+@back:
+	BEQ @done			; DiskExit set Z from the error number
+	TSX
+	DEC $0101,X
+	BNE @attempt
+@done:
+	STA DISK_TEMP
+	PLA
+	PLA
+	STA DISK_SAVED_SP
+	LDA DISK_TEMP
+	JMP DiskExit

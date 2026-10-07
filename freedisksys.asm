@@ -132,12 +132,28 @@ INCLUDE nmi.asm
 INCLUDE irq.asm
 
 ; Loads files specified by DiskID into memory from disk. Load addresses are
-; decided by the file's header.
+; decided by the file's header. A failed load is tried once more.
 ; Parameters: Pointer to Disk ID, Pointer to File List
 ; Returns: A = error #, Y = # of files loaded
+; The two pointers follow the JSR. A file list of just $FF loads the boot files.
 API_ENTRYPOINT $e1f8
 LoadFiles:
-	RTS
+	LDA #$FF
+	JSR GetHardCodedPointers
+	JSR TwoAttempts
+	JSR StartMotor
+	JSR WaitForDriveReady
+	JSR CheckDiskHeader
+	JSR GetNumFiles
+	LDA DISK_FILE_COUNT
+	BEQ @done
+@file:
+	JSR LoadData
+	DEC DISK_FILE_COUNT
+	BNE @file
+@done:
+	LDA #OK
+	JMP DiskExit
 
 ; Appends the file data given by DiskID to the disk. This means that the file
 ; is tacked onto the end of the disk, and the disk file count is incremented.
