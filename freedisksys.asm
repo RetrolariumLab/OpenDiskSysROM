@@ -615,10 +615,12 @@ WriteBlockType:
 
 ; Starts transferring a block in the mode the drive is in: sets the start and
 ; byte IRQ bits of $4025, so the RAM adapter waits for the start mark (reading)
-; or writes the byte in $4024 next (writing).
-; Affects: A, $FA
+; or writes the byte in $4024 next (writing). Interrupts are masked from here
+; on, as the transfer polls the byte flag.
+; Affects: A, $FA, the interrupt disable flag
 API_ENTRYPOINT $e6e3
 StartXfer:
+	SEI					; see SetDiskControl
 	LDA ZP_FDSCTRL
 	ORA #FDSCTRL_START | FDSCTRL_IRQ
 	STA ZP_FDSCTRL
@@ -697,12 +699,14 @@ XferDone:
 
 ; Starts the transfer of a block and exchanges its first byte: sets the start
 ; and byte IRQ bits of $4025, then does what XferByte does. Does not know or
-; care whether it's a read or write.
+; care whether it's a read or write. Interrupts are masked from here on, as
+; the transfer polls the byte flag.
 ; Parameters: A = byte to write to disk (if this is a write)
-; Affects: X, $FA
+; Affects: X, $FA, the interrupt disable flag
 ; Returns: A = byte read from disk (if this is a read)
 API_ENTRYPOINT $e794
 Xfer1stByte:
+	SEI					; see SetDiskControl
 	TAX
 	LDA ZP_FDSCTRL
 	ORA #FDSCTRL_START | FDSCTRL_IRQ

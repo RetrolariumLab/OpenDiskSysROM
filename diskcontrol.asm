@@ -14,10 +14,16 @@
 ; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ; Writes the drive control bits in A to $4025 and its mirror $FA, keeping the
-; mirroring bit the game chose.
+; mirroring bit the game chose. Setting the byte IRQ bit also masks
+; interrupts: the transfer polls the byte flag in $4030, and an IRQ handler
+; reading $4030 first would take the flag away.
 ; Parameters: A = FDSCTRL_* bits other than FDSCTRL_MIRROR
-; Affects: A, $FA
+; Affects: A, $FA, the interrupt disable flag
 SetDiskControl:
+	CMP #FDSCTRL_IRQ	; bit 7
+	BCC @control
+	SEI
+@control:
 	PHA
 	LDA ZP_FDSCTRL
 	AND #FDSCTRL_MIRROR
