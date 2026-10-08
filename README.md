@@ -121,8 +121,10 @@ and asm6f (`--asm6f`, the `ASM6F` variable or `asm6f` on PATH):
 | Script | Checks |
 | ------ | ------ |
 | `boot_test.py` | the boot loader puts every boot file in place |
+| `boot_error_test.py` | the DISK ERROR screen, then a retry that boots the intact disk |
 | `loadfiles_test.py` | LoadFiles on a running game, including a wrong disk ID |
 | `writefile_test.py` | WriteFile, AppendFile, the file count calls and GetDiskInfo |
+| `lowlevel_test.py` | the block calls a game's own loader uses, with interrupts enabled |
 | `keyboard_test.py` | ReadKeyboard with and without MAME's Family BASIC keyboard |
 | `uploadobject_test.py` | UploadObject against a model of the object structure |
 
