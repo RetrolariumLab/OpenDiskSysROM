@@ -16,7 +16,10 @@ first NMI vector once the disk has booted. It calls, in order:
   7. LoadFiles of the new file, which must find nothing;
   8. AdjustFileCount by one, hiding the last original file too;
   9. GetDiskInfo, which must show one file fewer than the disk had;
- 10. CheckFileCount above the count, which must fail with $31.
+ 10. CheckFileCount above the count, which must fail with $31;
+ 11. AppendFile of a 36 KiB file, more than the disk has left, which must
+     run off the end of the disk and fail rather than hang: with $29, or
+     with $28 when the second attempt reads into what the first left.
 
 MAME keeps what is written in memory only, so the disk image file is
 never changed; the test works on a copy anyway.
@@ -45,12 +48,14 @@ SOURCE_LAST = 0x0550
 SOURCE_NEW = 0x0560
 RESULTS = 0x0590
 DONE = 0x05AF
+HEADER_BIG = 0x05B0
 INFO_1 = 0x0600
 INFO_2 = 0x0680
 NEW_ADDRESS = 0x0700
 NEW_ID = 0x50
 NEW_NAME = b"OPENDISK"
 NEW_DATA = bytes((i * 7 + 3) & 0xFF for i in range(32))
+BIG_SIZE = 0x9000  # more than any side has free after a game's files
 
 LOAD_FILES, APPEND_FILE, WRITE_FILE = 0xE1F8, 0xE237, 0xE239
 CHECK_FILE_COUNT, ADJUST_FILE_COUNT, SET_FILE_COUNT, GET_DISK_INFO = 0xE2B7, 0xE2BB, 0xE305, 0xE32A
@@ -110,8 +115,9 @@ def main() -> int:
         (ADJUST_FILE_COUNT, 1, [DISK_ID]),
         (GET_DISK_INFO, 0, [INFO_2]),
         (CHECK_FILE_COUNT, count, [DISK_ID]),
+        (APPEND_FILE, 0, [DISK_ID, HEADER_BIG]),
     ]
-    want = [(0, None), (0, 1), (0, None), (0, 1), (0, None), (0, None), (0, 0), (0, None), (0, None), (0x31, None)]
+    want = [(0, None), (0, 1), (0, None), (0, 1), (0, None), (0, None), (0, 0), (0, None), (0, None), (0x31, None), ({0x28, 0x29}, None)]
     if len(last.data) > 128 or SOURCE_LAST + len(last.data) > SOURCE_NEW:
         sys.exit("the last file is too large for this test")
     code = program(calls, [(last.address, len(last.data)), (NEW_ADDRESS, len(NEW_DATA))])
@@ -122,6 +128,7 @@ def main() -> int:
         LIST_NEW: bytes([NEW_ID, 0xFF]),
         HEADER_LAST: header(last.file_id, last.name, last.address, len(new_last), SOURCE_LAST),
         HEADER_NEW: header(NEW_ID, NEW_NAME, NEW_ADDRESS, len(NEW_DATA), SOURCE_NEW),
+        HEADER_BIG: header(NEW_ID + 1, b"TOOLARGE", 0x6000, BIG_SIZE, 0x8000),
         SOURCE_LAST: new_last,
         SOURCE_NEW: NEW_DATA,
     }
@@ -181,7 +188,8 @@ def main() -> int:
     lines = [l for l in result.stdout.splitlines() if l.startswith(("CALL", "MEMORY", "FRAMES", "TIMEOUT"))]
     passed = bool(lines) and not any(l.startswith("TIMEOUT") for l in lines)
     names = ["WriteFile", "LoadFiles (rewritten file)", "AppendFile", "LoadFiles (new file)", "GetDiskInfo",
-             "SetFileCount", "LoadFiles (hidden file)", "AdjustFileCount", "GetDiskInfo", "CheckFileCount"]
+             "SetFileCount", "LoadFiles (hidden file)", "AdjustFileCount", "GetDiskInfo", "CheckFileCount",
+             "AppendFile (past the end of the disk)"]
     for line in lines:
         ok = True
         if line.startswith("CALL"):
@@ -189,7 +197,7 @@ def main() -> int:
             a = int(line.split("a=")[1].split()[0], 16)
             y = int(line.split("y=")[1])
             want_a, want_y = want[index]
-            ok = a == want_a and (want_y is None or y == want_y)
+            ok = (a in want_a if isinstance(want_a, set) else a == want_a) and (want_y is None or y == want_y)
             line = f"{line}  {names[index]}"
         elif line.startswith("MEMORY"):
             ok = "mismatched=0 " in line

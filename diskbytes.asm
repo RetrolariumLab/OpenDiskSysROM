@@ -47,6 +47,17 @@ ReadByte:
 ; Affects: nothing else
 WriteByte:
 	PHA
+	JSR WaitWriteReady
+	PLA
+	STA WRITEDATA
+	RTS
+
+; Waits for the next byte time of a write: until the RAM adapter is ready for
+; a byte. The end of the disk ($4030 bit 6, or $4032 bit 1 once the drive has
+; stopped) ends the disk call with EOF_WRITE, so a write that runs off the
+; disk never waits for good.
+; Affects: A
+WaitWriteReady:
 @wait:
 	LDA DISKSTATUS
 	AND #%01000010		; bit 1: ready for a byte, bit 6: end of the disk
@@ -58,8 +69,6 @@ WriteByte:
 @status:
 	AND #%00000010
 	BEQ @end
-	PLA
-	STA WRITEDATA
 	RTS
 @end:
 	LDA #EOF_WRITE

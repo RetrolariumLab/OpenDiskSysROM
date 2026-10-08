@@ -589,7 +589,8 @@ CheckBlockType:
 	JMP DiskExit
 
 ; Starts writing a block over whatever follows the last block read or written:
-; a gap of zeros, the start mark, then the block type in A. The mark goes to
+; a gap of zeros, the start mark, then the block type in A. Reaching the end of
+; the disk on the way ends the disk call with EOF_WRITE. The mark goes to
 ; $4024 while the drive still reads, so the RAM adapter puts it out when the
 ; start bit is set, and emulators that store every byte written to $4024 in a
 ; disk image without gaps or marks (MAME) store only the block itself.
@@ -604,9 +605,7 @@ WriteBlockType:
 	JSR SetDiskControl	; write mode, no block: the adapter writes zeros
 	LDX #GAP_LENGTH
 @gap:
-	LDA DISKSTATUS
-	AND #%00000010
-	BEQ @gap
+	JSR WaitWriteReady
 	DEX
 	BNE @gap
 	LDA #FDSCTRL_IRQ | FDSCTRL_START | FDSCTRL_ONE | FDSCTRL_MOTOR
@@ -647,7 +646,8 @@ EndOfBlockRead:
 	JMP DiskExit
 
 ; Finishes writing a block: waits until the RAM adapter has put out the last
-; byte, has it append the two CRC bytes, then goes back to reading with no
+; byte (the end of the disk ends the call with EOF_WRITE), has it append the
+; two CRC bytes, then goes back to reading with no
 ; block started, which stops the writing. With C set another block follows in
 ; the same pass: two zero bytes then go to $4024 while the CRC is written. The
 ; adapter ignores them, but emulators that store every $4024 byte in a disk
@@ -660,10 +660,7 @@ EndOfBlockRead:
 API_ENTRYPOINT $e729
 EndOfBlkWrite:
 	PHP
-@last:
-	LDA DISKSTATUS
-	AND #%00000010		; the last byte is on its way
-	BEQ @last
+	JSR WaitWriteReady	; the last byte is on its way
 	LDA #FDSCTRL_IRQ | FDSCTRL_START | FDSCTRL_CRC | FDSCTRL_ONE | FDSCTRL_MOTOR
 	JSR SetDiskControl
 	PLP
